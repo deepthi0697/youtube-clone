@@ -5,6 +5,10 @@ import * as logger from "firebase-functions/logger";
 import {Storage} from "@google-cloud/storage";
 import {onCall} from "firebase-functions/v2/https";
 
+
+const videoCollectionId = "videos";
+
+
 initializeApp();
 
 const firestore = new Firestore();
@@ -49,4 +53,20 @@ export const generateUploadUrl = onCall( {maxInstances: 1}, async (request) => {
   });
   return {url, fileName};
 });
+
+export interface Video {
+  id?: string,
+  uid?: string,
+  filename?: string,
+  status?: "processing" | "processed",
+  title?: string,
+  description?: string
+}
+
+export const getVideos = onCall({maxInstances: 1}, async () => {
+  const querySnapshot =
+    await firestore.collection(videoCollectionId).limit(10).get();
+  return querySnapshot.docs.map((doc) => doc.data());
+});
+
 

@@ -1,4 +1,5 @@
 import express from 'express';
+import { isVideoNew, setVideo } from "./firestore";
 import {setupDirectories, downloadRawVideo, uploadProcessedVideo, convertVideo, deleteRawVideo, deleteProcessedVideo} from './storage'
 
 
@@ -26,6 +27,18 @@ app.post('/process-video', async (req, res) => {
 
   const inputFileName = data.name
   const outputFileName = `processed-${inputFileName}`
+  const videoId = inputFileName.split('.')[0];
+
+  if (!isVideoNew(videoId)) {
+    return res.status(400).send('Bad Request: video already processing or processed.');
+  } else {
+    await setVideo(videoId, {
+      id: videoId,
+      uid: videoId.split('-')[0], // format [uid]-[date].[extension]
+      status: 'processing'
+    });
+  }
+
 
   //Download raw video from clud storage
   await  downloadRawVideo(inputFileName)
@@ -45,6 +58,11 @@ app.post('/process-video', async (req, res) => {
   
   //upload processed vid to cloud storage
   await uploadProcessedVideo(outputFileName)
+
+  await setVideo(videoId, {
+    status: 'processed',
+    filename: outputFileName
+  });
 
   await Promise.all([deleteRawVideo(inputFileName), deleteProcessedVideo(outputFileName)])// awaiting concurrently - to delete the corrupted files locally
 
