@@ -1,11 +1,24 @@
+import Link from 'next/link';
+import { getVideos } from './firebase/functions';
+import styles from './page.module.css'
 
-export default function Home() {
+
+export default async function Home() {
+  const videos = await getVideos();
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-       
-        
-      </main>
-    </div>
-  );
+    <main>
+      {
+        videos.map((video) => (
+          <Link href={`/watch?v=${video.filename}` } key={video.id}>
+            {/* <Image src={'/thumbnail.png'} alt='video' width={120} height={80}
+              className={styles.thumbnail}/> */}
+          </Link>
+        ))
+      }
+    </main>
+  )
 }
+
+
+export const revalidate = 30; // every 30 sec, its gonna re-render page and cache and update the page with the new videos.
